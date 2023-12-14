@@ -1,6 +1,7 @@
 package dbresolver
 
 import (
+	"gorm.io/gorm"
 	"regexp"
 )
 
@@ -12,4 +13,11 @@ func getTableFromRawSQL(sql string) string {
 	}
 
 	return ""
+}
+
+func GetMapOnlyOne(connPools map[string]gorm.ConnPool) gorm.ConnPool {
+	for _, connPool := range connPools {
+		return connPool
+	}
+	return nil
 }

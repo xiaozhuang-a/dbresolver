@@ -1,18 +1,33 @@
 package dbresolver
 
 import (
+	"context"
 	"math/rand"
 
 	"gorm.io/gorm"
 )
 
 type Policy interface {
-	Resolve([]gorm.ConnPool) gorm.ConnPool
+	Resolve(context.Context, map[string]gorm.ConnPool) gorm.ConnPool
 }
 
 type RandomPolicy struct {
 }
 
-func (RandomPolicy) Resolve(connPools []gorm.ConnPool) gorm.ConnPool {
-	return connPools[rand.Intn(len(connPools))]
+const TargetDB = "targetDB"
+
+func (RandomPolicy) Resolve(ctx context.Context, connPools map[string]gorm.ConnPool) gorm.ConnPool {
+	u, ok := ctx.Value(TargetDB).(string)
+	if ok {
+		return connPools[u]
+	}
+	return randomGetMap(connPools)
+}
+
+func randomGetMap(connPools map[string]gorm.ConnPool) gorm.ConnPool {
+	list := make([]gorm.ConnPool, 0, len(connPools))
+	for _, connPool := range connPools {
+		list = append(list, connPool)
+	}
+	return list[rand.Intn(len(connPools))]
 }

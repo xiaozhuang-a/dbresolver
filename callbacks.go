@@ -16,13 +16,13 @@ func (dr *DBResolver) registerCallbacks(db *gorm.DB) {
 }
 
 func (dr *DBResolver) switchSource(db *gorm.DB) {
-	if !isTransaction(db.Statement.ConnPool) {
+	if !dr.isTransaction(db.Statement.ConnPool) {
 		db.Statement.ConnPool = dr.resolve(db.Statement, Write)
 	}
 }
 
 func (dr *DBResolver) switchReplica(db *gorm.DB) {
-	if !isTransaction(db.Statement.ConnPool) {
+	if !dr.isTransaction(db.Statement.ConnPool) {
 		if rawSQL := db.Statement.SQL.String(); len(rawSQL) > 0 {
 			dr.switchGuess(db)
 		} else {
@@ -37,7 +37,7 @@ func (dr *DBResolver) switchReplica(db *gorm.DB) {
 }
 
 func (dr *DBResolver) switchGuess(db *gorm.DB) {
-	if !isTransaction(db.Statement.ConnPool) {
+	if !dr.isTransaction(db.Statement.ConnPool) {
 		if _, ok := db.Statement.Settings.Load(writeName); ok {
 			db.Statement.ConnPool = dr.resolve(db.Statement, Write)
 		} else if _, ok := db.Statement.Settings.Load(readName); ok {
@@ -50,7 +50,10 @@ func (dr *DBResolver) switchGuess(db *gorm.DB) {
 	}
 }
 
-func isTransaction(connPool gorm.ConnPool) bool {
+func (dr *DBResolver) isTransaction(connPool gorm.ConnPool) bool {
+	if dr.RouterTran {
+		return false
+	}
 	_, ok := connPool.(gorm.TxCommitter)
 	return ok
 }

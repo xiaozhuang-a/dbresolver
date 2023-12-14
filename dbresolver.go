@@ -12,6 +12,8 @@ const (
 	Read  Operation = "read"
 )
 
+const DefaultConnPoolName = "default"
+
 type DBResolver struct {
 	*gorm.DB
 	configs          []Config
@@ -19,11 +21,12 @@ type DBResolver struct {
 	global           *resolver
 	prepareStmtStore map[gorm.ConnPool]*gorm.PreparedStmtDB
 	compileCallbacks []func(gorm.ConnPool) error
+	RouterTran       bool
 }
 
 type Config struct {
-	Sources           []gorm.Dialector
-	Replicas          []gorm.Dialector
+	Sources           map[string]gorm.Dialector
+	Replicas          map[string]gorm.Dialector
 	Policy            Policy
 	datas             []interface{}
 	TraceResolverMode bool
@@ -88,7 +91,7 @@ func (dr *DBResolver) compileConfig(config Config) (err error) {
 	}
 
 	if len(config.Sources) == 0 {
-		r.sources = []gorm.ConnPool{connPool}
+		r.sources = map[string]gorm.ConnPool{DefaultConnPoolName: connPool}
 	} else if r.sources, err = dr.convertToConnPool(config.Sources); err != nil {
 		return err
 	}
@@ -131,9 +134,9 @@ func (dr *DBResolver) compileConfig(config Config) (err error) {
 	return nil
 }
 
-func (dr *DBResolver) convertToConnPool(dialectors []gorm.Dialector) (connPools []gorm.ConnPool, err error) {
+func (dr *DBResolver) convertToConnPool(dialectors map[string]gorm.Dialector) (connPools map[string]gorm.ConnPool, err error) {
 	config := *dr.DB.Config
-	for _, dialector := range dialectors {
+	for k, dialector := range dialectors {
 		if db, err := gorm.Open(dialector, &config); err == nil {
 			connPool := db.Config.ConnPool
 			if preparedStmtDB, ok := connPool.(*gorm.PreparedStmtDB); ok {
@@ -147,7 +150,7 @@ func (dr *DBResolver) convertToConnPool(dialectors []gorm.Dialector) (connPools 
 				PreparedSQL: make([]string, 0, 100),
 			}
 
-			connPools = append(connPools, connPool)
+			connPools[k] = connPool
 		} else {
 			return nil, err
 		}

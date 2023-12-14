@@ -5,8 +5,8 @@ import (
 )
 
 type resolver struct {
-	sources           []gorm.ConnPool
-	replicas          []gorm.ConnPool
+	sources           map[string]gorm.ConnPool
+	replicas          map[string]gorm.ConnPool
 	policy            Policy
 	dbResolver        *DBResolver
 	traceResolverMode bool
@@ -15,20 +15,20 @@ type resolver struct {
 func (r *resolver) resolve(stmt *gorm.Statement, op Operation) (connPool gorm.ConnPool) {
 	if op == Read {
 		if len(r.replicas) == 1 {
-			connPool = r.replicas[0]
+			connPool = GetMapOnlyOne(r.replicas)
 		} else {
-			connPool = r.policy.Resolve(r.replicas)
+			connPool = r.policy.Resolve(stmt.Context, r.replicas)
 		}
 		if r.traceResolverMode {
 			markStmtResolverMode(stmt, ResolverModeReplica)
 		}
 	} else if len(r.sources) == 1 {
-		connPool = r.sources[0]
+		connPool = GetMapOnlyOne(r.sources)
 		if r.traceResolverMode {
 			markStmtResolverMode(stmt, ResolverModeSource)
 		}
 	} else {
-		connPool = r.policy.Resolve(r.sources)
+		connPool = r.policy.Resolve(stmt.Context, r.sources)
 		if r.traceResolverMode {
 			markStmtResolverMode(stmt, ResolverModeSource)
 		}
