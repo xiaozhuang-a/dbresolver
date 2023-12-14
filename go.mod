@@ -1,4 +1,4 @@
-module gorm.io/plugin/dbresolver
+module gorm.io/plugin/dbresolver2
 
 go 1.14
 
