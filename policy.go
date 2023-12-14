@@ -14,7 +14,9 @@ type Policy interface {
 type RandomPolicy struct {
 }
 
-const TargetDB = "targetDB"
+type DBContext string
+
+const TargetDB DBContext = "targetDB"
 
 func (RandomPolicy) Resolve(ctx context.Context, connPools map[string]gorm.ConnPool) gorm.ConnPool {
 	u, ok := ctx.Value(TargetDB).(string)
