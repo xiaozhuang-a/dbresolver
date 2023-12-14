@@ -136,6 +136,7 @@ func (dr *DBResolver) compileConfig(config Config) (err error) {
 
 func (dr *DBResolver) convertToConnPool(dialectors map[string]gorm.Dialector) (connPools map[string]gorm.ConnPool, err error) {
 	config := *dr.DB.Config
+	connPools = make(map[string]gorm.ConnPool)
 	for k, dialector := range dialectors {
 		if db, err := gorm.Open(dialector, &config); err == nil {
 			connPool := db.Config.ConnPool
