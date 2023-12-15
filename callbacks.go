@@ -51,9 +51,6 @@ func (dr *DBResolver) switchGuess(db *gorm.DB) {
 }
 
 func (dr *DBResolver) isTransaction(connPool gorm.ConnPool) bool {
-	if dr.RouterTran {
-		return false
-	}
 	_, ok := connPool.(gorm.TxCommitter)
 	return ok
 }

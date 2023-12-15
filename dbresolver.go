@@ -21,7 +21,6 @@ type DBResolver struct {
 	global           *resolver
 	prepareStmtStore map[gorm.ConnPool]*gorm.PreparedStmtDB
 	compileCallbacks []func(gorm.ConnPool) error
-	RouterTran       bool
 }
 
 type Config struct {
